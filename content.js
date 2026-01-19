@@ -6,6 +6,72 @@
   let hasProcessedResult = false;
   let checkResultInterval = null;
 
+  // 현재 선택된 프로그래밍 언어 감지
+  function detectLanguage() {
+    // 1. URL 파라미터에서 언어 확인 (가장 신뢰도 높음)
+    const urlParams = new URLSearchParams(window.location.search);
+    const langParam = urlParams.get('language');
+    if (langParam) {
+      console.log('[SPARTA SQL] URL 언어 파라미터:', langParam);
+      return langParam.toLowerCase();
+    }
+
+    // 2. 언어 선택 버튼에서 확인
+    const langButton = document.querySelector('[class*="language"] button') ||
+                       document.querySelector('.editor-toolbar button') ||
+                       document.querySelector('[data-testid="language-selector"]');
+    if (langButton) {
+      const langText = langButton.textContent?.trim().toLowerCase();
+      console.log('[SPARTA SQL] 언어 버튼 텍스트:', langText);
+      if (langText) return langText;
+    }
+
+    // 3. 파일 탭에서 확인
+    const fileTab = document.querySelector('.file-tab') ||
+                    document.querySelector('[class*="tab"]');
+    if (fileTab) {
+      const tabText = fileTab.textContent?.toLowerCase() || '';
+      if (tabText.includes('.sql')) return 'mysql';
+      if (tabText.includes('.py')) return 'python3';
+    }
+
+    return 'unknown';
+  }
+
+  // SQL 문제인지 확인
+  function isSQLProblem() {
+    const lang = detectLanguage();
+    const sqlLanguages = ['mysql', 'oracle', 'sql', 'postgresql', 'mariadb'];
+
+    if (sqlLanguages.includes(lang)) {
+      console.log('[SPARTA SQL] SQL 언어 감지됨:', lang);
+      return true;
+    }
+
+    // Python 등 다른 언어인 경우
+    if (lang.includes('python') || lang.includes('java') || lang.includes('cpp') ||
+        lang.includes('javascript') || lang.includes('kotlin') || lang.includes('swift')) {
+      console.log('[SPARTA SQL] 비-SQL 언어 감지됨:', lang, '- 처리 건너뜀');
+      return false;
+    }
+
+    // unknown인 경우 breadcrumb 확인
+    const breadcrumb = document.querySelector('.breadcrumb') ||
+                       document.querySelector('[class*="breadcrumb"]');
+    if (breadcrumb) {
+      const breadText = breadcrumb.textContent?.toLowerCase() || '';
+      // SQL 관련 카테고리 확인
+      if (breadText.includes('select') || breadText.includes('join') ||
+          breadText.includes('group by') || breadText.includes('is null')) {
+        console.log('[SPARTA SQL] breadcrumb에서 SQL 카테고리 감지');
+        return true;
+      }
+    }
+
+    console.log('[SPARTA SQL] 언어 감지 불확실:', lang);
+    return null; // 불확실한 경우
+  }
+
   // 문제 ID 추출
   function getProblemId() {
     const url = window.location.href;
@@ -314,6 +380,13 @@
     }
     hasProcessedResult = true;
     isWaitingForResult = false;
+
+    // SQL 문제인지 확인 (Python, Java 등 비-SQL 문제는 처리하지 않음)
+    const sqlCheck = isSQLProblem();
+    if (sqlCheck === false) {
+      console.log('[SPARTA SQL] 비-SQL 문제 감지됨 - SQL 익스텐션이므로 처리 건너뜀');
+      return;
+    }
 
     // 네트워크 상태 확인
     if (!isOnline()) {
