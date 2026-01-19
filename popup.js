@@ -670,27 +670,44 @@ document.addEventListener('DOMContentLoaded', async () => {
     entryDetails.textContent = details;
   }
 
-  function showToast(message) {
+  function showToast(message, type = 'success', duration = 2500) {
     const existing = document.querySelector('.toast');
     if (existing) existing.remove();
 
     const toast = document.createElement('div');
     toast.className = 'toast';
+
+    // 타입별 배경색
+    let bgColor = 'linear-gradient(135deg, rgba(124, 58, 237, 0.95), rgba(139, 92, 246, 0.95))';
+    let boxShadow = '0 4px 20px rgba(139, 92, 246, 0.4)';
+    if (type === 'error') {
+      bgColor = 'linear-gradient(135deg, #ef4444, #dc2626)';
+      boxShadow = '0 4px 20px rgba(239, 68, 68, 0.4)';
+      duration = Math.max(duration, 3500); // 에러는 최소 3.5초
+    } else if (type === 'warning') {
+      bgColor = 'linear-gradient(135deg, #f59e0b, #d97706)';
+      boxShadow = '0 4px 20px rgba(245, 158, 11, 0.4)';
+      duration = Math.max(duration, 3000); // 경고는 최소 3초
+    }
+
     toast.style.cssText = `
       position: fixed;
       bottom: 60px;
       left: 50%;
       transform: translateX(-50%);
       padding: 10px 20px;
-      background: linear-gradient(135deg, rgba(124, 58, 237, 0.95), rgba(139, 92, 246, 0.95));
+      background: ${bgColor};
       color: white;
       border-radius: 10px;
       font-size: 12px;
       font-weight: 600;
       z-index: 9999;
       animation: toastIn 0.3s ease;
-      box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+      box-shadow: ${boxShadow};
       border: 1px solid rgba(255, 255, 255, 0.1);
+      max-width: 280px;
+      text-align: center;
+      word-break: keep-all;
     `;
     toast.textContent = message;
 
@@ -703,7 +720,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     `;
     document.head.appendChild(style);
     document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2000);
+    setTimeout(() => toast.remove(), duration);
   }
 
   // 클립보드 복사 함수
