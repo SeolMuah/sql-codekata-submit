@@ -12,7 +12,7 @@ SPARTA SQL 코드카타 문제 풀이를 자동으로 구글 폼과 GitHub에 �
 
 1. 이 저장소를 다운로드합니다
    ```
-   git clone https://github.com/SeolMuah/sql-codekata-submit-.git
+   git clone https://github.com/SeolMuah/sql-codekata-submit.git
    ```
 
 2. Chrome 브라우저에서 `chrome://extensions` 로 이동합니다
