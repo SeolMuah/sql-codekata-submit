@@ -790,9 +790,17 @@
         <p style="font-size: 11px; color: #94a3b8; margin-bottom: 8px;">아래 코드를 GitHub에 입력하세요</p>
         <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
           <div class="device-code" id="userCode">XXXX-XXXX</div>
-          <button id="copyCodeBtn" class="copy-btn" title="코드 복사">📋</button>
+          <button id="copyCodeBtn" class="copy-btn" title="코드 복사">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+            </svg>
+          </button>
         </div>
-        <p id="codeCopiedMsg" class="hidden" style="font-size: 10px; color: #10b981; margin-top: 4px;">✓ 복사되었습니다!</p>
+        <p id="codeCopiedMsg" class="hidden" style="font-size: 10px; color: #10b981; margin-top: 4px;">복사됨!</p>
+        <p style="font-size: 10px; color: #94a3b8; margin-top: 8px;">
+          새 탭에서 GitHub 인증 페이지가 열렸습니다.<br>
+          위 코드를 붙여넣기(Ctrl+V) 하세요.
+        </p>
         <a href="https://github.com/login/device" target="_blank" class="device-code-link">
           GitHub에서 인증하기 →
         </a>
