@@ -595,45 +595,70 @@
       color: #a78bfa;
     }
 
-    /* GitHub 프로필 */
+    /* GitHub 프로필 (클릭 가능) */
     .github-profile {
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 10px 12px;
+      padding: 12px;
       background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.2);
       border-radius: 8px;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .github-profile:hover {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: rgba(139, 92, 246, 0.4);
     }
     .github-avatar {
-      width: 32px;
-      height: 32px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       border: 2px solid rgba(139, 92, 246, 0.3);
     }
     .github-info {
       flex: 1;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
+      gap: 2px;
     }
     .github-name {
       font-size: 13px;
       font-weight: 600;
       color: #c4b5fd;
     }
-    .github-logout {
+    .github-login {
       font-size: 11px;
-      color: #8b5cf6;
-      cursor: pointer;
+      color: #a78bfa;
     }
-    .github-logout:hover { color: #ef4444; }
+    .github-logout-btn {
+      padding: 6px 12px;
+      background: transparent;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 6px;
+      color: #8b5cf6;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .github-logout-btn:hover {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: #ef4444;
+      color: #ef4444;
+    }
 
     /* 저장소 선택 */
     .repo-selector {
       display: flex;
       flex-direction: column;
       margin-bottom: 10px;
+    }
+    .repo-selector-label {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-bottom: 6px;
     }
     .repo-select {
       width: 100%;
@@ -823,13 +848,15 @@
         <div class="github-profile">
           <img id="githubAvatar" src="" alt="GitHub Avatar" class="github-avatar">
           <div class="github-info">
-            <span class="github-name" id="githubName">-</span>
-            <span class="github-logout" id="githubLogout">로그아웃</span>
+            <div class="github-name" id="githubName">-</div>
+            <div class="github-login" id="githubLogin">@-</div>
           </div>
+          <button class="github-logout-btn" id="githubLogout">로그아웃</button>
         </div>
 
         <!-- 저장소 선택 -->
         <div class="repo-selector">
+          <div class="repo-selector-label">저장소 선택</div>
           <select class="repo-select" id="repoSelect">
             <option value="">저장소 선택...</option>
           </select>

@@ -58,6 +58,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const deviceCodeStatus = document.getElementById('deviceCodeStatus');
   const githubAvatar = document.getElementById('githubAvatar');
   const githubName = document.getElementById('githubName');
+  const githubLogin = document.getElementById('githubLogin');
   const githubLogout = document.getElementById('githubLogout');
   const repoSelect = document.getElementById('repoSelect');
   const createRepoBtn = document.getElementById('createRepoBtn');
@@ -859,6 +860,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     githubUserSection.classList.remove('hidden');
     githubAvatar.src = user.avatar_url;
     githubName.textContent = user.name || user.login;
+    githubLogin.textContent = '@' + user.login;
     // 만료 메시지 제거
     const expiredMsg = document.getElementById('githubExpiredMsg');
     if (expiredMsg) expiredMsg.remove();
@@ -969,6 +971,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.error('[SPARTA] GitHub 로그인 오류:', error);
       showToast(error.message || 'GitHub 연결 실패', 'error');
       resetLoginUI();
+    }
+  });
+
+  // GitHub 프로필 영역 클릭 시 레포지토리로 이동 (버튼/select 제외)
+  githubUserSection.addEventListener('click', (e) => {
+    const target = e.target;
+    // 버튼, select, option 클릭은 무시
+    if (target.tagName === 'BUTTON' ||
+        target.tagName === 'SELECT' ||
+        target.tagName === 'OPTION' ||
+        target.closest('button') ||
+        target.closest('select')) {
+      return;
+    }
+
+    // 선택된 저장소가 있으면 해당 레포지토리로 이동
+    const selectedRepo = repoSelect.value;
+    if (selectedRepo) {
+      const repoUrl = `https://github.com/${selectedRepo}`;
+      chrome.tabs.create({ url: repoUrl });
     }
   });
 
