@@ -244,9 +244,20 @@
       const settings = await chrome.storage.sync.get(['githubAutoSubmit', 'githubRepo']);
       const tokenData = await chrome.storage.local.get(['githubToken']);
 
-      if (settings.githubAutoSubmit && settings.githubRepo && tokenData.githubToken) {
+      // githubAutoSubmit이 undefined인 경우 기본값 true로 처리
+      const autoSubmitEnabled = settings.githubAutoSubmit !== false;
+
+      console.log('[SPARTA] GitHub 제출 조건 확인:', {
+        autoSubmitEnabled: autoSubmitEnabled,
+        githubRepo: settings.githubRepo,
+        hasToken: !!tokenData.githubToken
+      });
+
+      if (autoSubmitEnabled && settings.githubRepo && tokenData.githubToken) {
         showNotification('정답입니다! GitHub에 업로드 중...', 'success');
         githubUrl = await submitToGitHub(problemInfo, code) || '';
+      } else {
+        console.log('[SPARTA] GitHub 자동 제출 건너뜀 - 조건 미충족');
       }
 
       // 등록된 문제만 구글 폼에 제출
