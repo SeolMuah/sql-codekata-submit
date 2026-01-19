@@ -1,0 +1,25 @@
+# 개발/테스트 파일
+docs/
+*.md
+!README.md
+
+# 백업/임시 파일
+*_pre.js
+*_backup.*
+*.bak
+*.tmp
+*.temp
+
+# OS 파일
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE/에디터
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 로그
+*.log

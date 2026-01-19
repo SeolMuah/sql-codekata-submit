@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "SPARTA SQL 코드카타",
+  "version": "1.1.0",
+  "description": "SQL 코드카타 자동 제출 (구글 폼 + GitHub) - 184문제",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://school.programmers.co.kr/*",
+    "https://leetcode.com/*",
+    "https://www.hackerrank.com/*",
+    "https://docs.google.com/*",
+    "https://*.google.com/*",
+    "https://github.com/*",
+    "https://api.github.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icons/icon.png"
+  },
+  "icons": {
+    "128": "icons/icon.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://school.programmers.co.kr/learn/courses/*/lessons/*"],
+      "js": ["problems.js", "content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://leetcode.com/problems/*"],
+      "js": ["problems.js", "content-leetcode.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.hackerrank.com/challenges/*"],
+      "js": ["problems.js", "content-hackerrank.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

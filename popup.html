@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SPARTA SQL 코드카타</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      width: 420px;
+      background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%);
+      color: #e2e8f0;
+      min-height: 520px;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+    }
+    .header h1 {
+      font-size: 15px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #a78bfa, #c4b5fd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .header-stats {
+      font-size: 12px;
+      color: #a78bfa;
+      font-weight: 600;
+      padding: 4px 10px;
+      background: rgba(139, 92, 246, 0.15);
+      border-radius: 12px;
+    }
+
+    .container { padding: 12px; }
+
+    /* 탭 네비게이션 */
+    .tab-nav {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+      background: rgba(0,0,0,0.4);
+      padding: 4px;
+      border-radius: 10px;
+      border: 1px solid rgba(139, 92, 246, 0.1);
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 8px 6px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: #64748b;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .tab-btn:hover { background: rgba(139, 92, 246, 0.1); color: #a78bfa; }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+      color: white;
+      box-shadow: 0 2px 10px rgba(139, 92, 246, 0.4);
+    }
+    .tab-btn .tab-count {
+      font-size: 9px;
+      opacity: 0.7;
+    }
+    .tab-btn.active .tab-count { opacity: 1; }
+
+    /* 탭 컨텐츠 */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* 섹션 스타일 */
+    .section {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(139, 92, 246, 0.15);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #a78bfa;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .section-title::before {
+      content: '';
+      width: 3px;
+      height: 10px;
+      background: linear-gradient(180deg, #7c3aed, #a78bfa);
+      border-radius: 2px;
+    }
+
+    /* 난이도 그룹 */
+    .difficulty-group {
+      margin-bottom: 8px;
+    }
+    .difficulty-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+    .difficulty-header:hover {
+      background: rgba(139, 92, 246, 0.1);
+      border-color: rgba(139, 92, 246, 0.2);
+    }
+    .difficulty-header.expanded {
+      background: rgba(139, 92, 246, 0.15);
+      border-radius: 8px 8px 0 0;
+      border-color: rgba(139, 92, 246, 0.2);
+      border-bottom: none;
+    }
+    .difficulty-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .difficulty-stars { font-size: 12px; }
+    .difficulty-name {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+    .difficulty-stats {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .difficulty-count {
+      font-size: 11px;
+      color: #64748b;
+    }
+    .difficulty-progress {
+      width: 40px;
+      height: 4px;
+      background: rgba(139, 92, 246, 0.15);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .difficulty-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+      border-radius: 2px;
+      transition: width 0.3s;
+    }
+    .difficulty-arrow {
+      color: #64748b;
+      transition: transform 0.2s;
+      font-size: 10px;
+    }
+    .difficulty-header.expanded .difficulty-arrow {
+      transform: rotate(180deg);
+    }
+
+    /* 문제 목록 */
+    .problem-list {
+      display: none;
+      background: rgba(0,0,0,0.25);
+      border-radius: 0 0 8px 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-top: none;
+    }
+    .problem-list.show { display: block; }
+    .problem-list::-webkit-scrollbar { width: 4px; }
+    .problem-list::-webkit-scrollbar-track { background: transparent; }
+    .problem-list::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.3); border-radius: 2px; }
+
+    .problem-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+      transition: all 0.15s;
+    }
+    .problem-item:hover { background: rgba(139, 92, 246, 0.08); }
+    .problem-item:last-child { border-bottom: none; }
+    .problem-item.solved { opacity: 0.6; }
+    .problem-item.solved .problem-title { text-decoration: line-through; color: #94a3b8; }
+
+    .problem-check {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      border: 2px solid rgba(139, 92, 246, 0.3);
+      margin-right: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .problem-check:hover {
+      border-color: #8b5cf6;
+      background: rgba(139, 92, 246, 0.2);
+      transform: scale(1.1);
+    }
+    .problem-item.solved .problem-check {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      border-color: transparent;
+      color: white;
+    }
+    .problem-item.solved .problem-check:hover {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      transform: scale(1.1);
+    }
+    .problem-num {
+      font-size: 10px;
+      color: #64748b;
+      width: 24px;
+      flex-shrink: 0;
+    }
+    .problem-title {
+      font-size: 12px;
+      color: #e2e8f0;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      padding: 2px 0;
+    }
+    .problem-title:hover { color: #a78bfa; }
+    .problem-go {
+      font-size: 12px;
+      color: #a78bfa;
+      opacity: 0;
+      transition: all 0.15s;
+      cursor: pointer;
+      padding: 4px;
+    }
+    .problem-item:hover .problem-go { opacity: 1; }
+    .problem-go:hover { color: #c4b5fd; transform: translateX(2px); }
+
+    /* 프로필 섹션 (축소) */
+    .profile-section {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .profile-input {
+      flex: 1;
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 8px;
+      font-size: 13px;
+      color: #e2e8f0;
+    }
+    .profile-input:focus { outline: none; border-color: #8b5cf6; box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2); }
+    .profile-btn {
+      padding: 10px 16px;
+      background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .profile-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+    }
+    .profile-display {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.25);
+      border-radius: 10px;
+    }
+    .profile-dot {
+      width: 8px;
+      height: 8px;
+      background: #a78bfa;
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(167, 139, 250, 0.5);
+    }
+    .profile-name { font-size: 13px; font-weight: 600; flex: 1; color: #c4b5fd; }
+    .profile-change {
+      font-size: 11px;
+      color: #8b5cf6;
+      cursor: pointer;
+    }
+    .profile-change:hover { color: #a78bfa; }
+
+    /* 다음 문제 추천 (콤팩트) */
+    .next-problem {
+      background: linear-gradient(135deg, rgba(251,191,36,0.15), rgba(245,158,11,0.1));
+      border: 1px solid rgba(251,191,36,0.3);
+      border-radius: 10px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .next-problem:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(251,191,36,0.2);
+    }
+    .next-badge {
+      padding: 4px 8px;
+      background: rgba(251,191,36,0.2);
+      border-radius: 6px;
+      font-size: 9px;
+      font-weight: 700;
+      color: #fbbf24;
+      text-transform: uppercase;
+    }
+    .next-info { flex: 1; }
+    .next-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fef3c7;
+      margin-bottom: 2px;
+    }
+    .next-meta {
+      font-size: 10px;
+      color: #fcd34d;
+      display: flex;
+      gap: 8px;
+    }
+    .next-arrow { color: #fbbf24; font-size: 16px; }
+
+    /* 진행률 요약 */
+    .progress-summary {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .progress-card {
+      flex: 1;
+      text-align: center;
+      padding: 10px 6px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 10px;
+      border: 1px solid rgba(139, 92, 246, 0.1);
+    }
+    .progress-value {
+      font-size: 16px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #a78bfa, #c4b5fd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .progress-label {
+      font-size: 8px;
+      color: #64748b;
+      margin-top: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* 완료 상태 */
+    .complete-card {
+      background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(16,185,129,0.1));
+      border: 1px solid rgba(34,197,94,0.3);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    .complete-icon { font-size: 36px; margin-bottom: 8px; }
+    .complete-title { font-size: 16px; font-weight: 700; color: #86efac; }
+    .complete-desc { font-size: 12px; color: #6ee7b7; margin-top: 4px; }
+
+    /* 설정 탭 */
+    .setting-group {
+      margin-bottom: 12px;
+    }
+    .setting-label {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+    .setting-input {
+      width: 100%;
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 8px;
+      font-size: 12px;
+      color: #e2e8f0;
+    }
+    .setting-input:focus { outline: none; border-color: #8b5cf6; box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2); }
+    .setting-btn {
+      width: 100%;
+      padding: 10px;
+      background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: all 0.2s;
+    }
+    .setting-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+    }
+    .setting-status {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 6px;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 12px;
+      font-size: 10px;
+      color: #64748b;
+      border-top: 1px solid rgba(139, 92, 246, 0.1);
+      background: rgba(0,0,0,0.2);
+    }
+
+    /* 폼 연결 완료 상태 */
+    .form-connected {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(34,197,94,0.1);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: 8px;
+    }
+    .form-connected-dot {
+      width: 8px;
+      height: 8px;
+      background: #22c55e;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .form-connected-info {
+      flex: 1;
+    }
+    .form-connected-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #86efac;
+    }
+    .form-connected-detail {
+      font-size: 10px;
+      color: #6ee7b7;
+      margin-top: 2px;
+    }
+    .form-change-btn {
+      padding: 4px 10px;
+      background: transparent;
+      border: 1px solid rgba(34,197,94,0.3);
+      border-radius: 6px;
+      color: #6ee7b7;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .form-change-btn:hover {
+      background: rgba(34,197,94,0.1);
+      border-color: rgba(34,197,94,0.5);
+    }
+    .entry-details {
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 6px;
+      font-size: 10px;
+      color: #94a3b8;
+    }
+
+    /* 숨김 */
+    .hidden { display: none !important; }
+
+    /* GitHub 버튼 */
+    .github-login-btn {
+      width: 100%;
+      padding: 12px 16px;
+      background: #24292e;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .github-login-btn:hover {
+      background: #2d333b;
+      border-color: rgba(139, 92, 246, 0.5);
+      transform: translateY(-1px);
+    }
+    .github-login-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .github-login-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Device Code 섹션 */
+    .device-code-section {
+      text-align: center;
+      padding: 16px;
+      background: rgba(139, 92, 246, 0.1);
+      border-radius: 10px;
+      border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+    .device-code {
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: #a78bfa;
+      background: rgba(0,0,0,0.3);
+      padding: 12px 20px;
+      border-radius: 8px;
+      margin: 12px 0;
+    }
+    .device-code-link {
+      display: inline-block;
+      color: #8b5cf6;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 16px;
+      background: rgba(139, 92, 246, 0.15);
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .device-code-link:hover {
+      background: rgba(139, 92, 246, 0.25);
+      color: #a78bfa;
+    }
+
+    /* GitHub 프로필 */
+    .github-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      background: rgba(139, 92, 246, 0.1);
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    .github-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid rgba(139, 92, 246, 0.3);
+    }
+    .github-info {
+      flex: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .github-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #c4b5fd;
+    }
+    .github-logout {
+      font-size: 11px;
+      color: #8b5cf6;
+      cursor: pointer;
+    }
+    .github-logout:hover { color: #ef4444; }
+
+    /* 저장소 선택 */
+    .repo-selector {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .repo-select {
+      flex: 1;
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .repo-select:focus {
+      outline: none;
+      border-color: #8b5cf6;
+    }
+    .create-repo-btn {
+      padding: 10px 14px;
+      background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .create-repo-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+    }
+    .create-repo-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* 자동 제출 토글 */
+    .auto-submit-toggle {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+    }
+    .toggle-label {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #374151;
+      border-radius: 24px;
+      transition: 0.3s;
+    }
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.3s;
+    }
+    .toggle-switch input:checked + .toggle-slider {
+      background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+    }
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+    }
+
+    /* 토스트 메시지 */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(139, 92, 246, 0.95);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 1000;
+      opacity: 0;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .toast.error {
+      background: rgba(239, 68, 68, 0.95);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <img src="icons/icon.png" alt="SPARTA" class="header-icon">
+      <h1>SQL 코드카타</h1>
+    </div>
+    <div class="header-stats" id="headerStats">0/184</div>
+  </div>
+
+  <div class="container">
+    <!-- 프로필 -->
+    <div class="profile-section" id="profileSection">
+      <div id="profileSetup" class="hidden" style="display: flex; gap: 8px; width: 100%;">
+        <input type="text" class="profile-input" id="studentName" placeholder="이름 입력">
+        <button class="profile-btn" id="saveNameBtn">저장</button>
+      </div>
+      <div id="profileDisplay" class="profile-display hidden" style="width: 100%;">
+        <div class="profile-dot"></div>
+        <span class="profile-name" id="currentName">-</span>
+        <span class="profile-change" id="changeNameBtn">변경</span>
+      </div>
+    </div>
+
+    <!-- GitHub 연결 섹션 -->
+    <div class="section" id="githubSection">
+      <div class="section-title">GitHub 연결</div>
+
+      <!-- 로그인 전 상태 -->
+      <div id="githubLoginSection">
+        <button class="github-login-btn" id="loginWithGithub">
+          <svg viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          GitHub로 로그인
+        </button>
+      </div>
+
+      <!-- Device Code 표시 섹션 -->
+      <div id="deviceCodeSection" class="device-code-section hidden">
+        <p style="font-size: 11px; color: #94a3b8; margin-bottom: 8px;">아래 코드를 GitHub에 입력하세요</p>
+        <div class="device-code" id="userCode">XXXX-XXXX</div>
+        <a href="https://github.com/login/device" target="_blank" class="device-code-link">
+          GitHub에서 인증하기 →
+        </a>
+        <p style="font-size: 10px; color: #64748b; margin-top: 8px;" id="deviceCodeStatus">인증 대기 중...</p>
+      </div>
+
+      <!-- 로그인 완료 상태 -->
+      <div id="githubUserSection" class="hidden">
+        <div class="github-profile">
+          <img id="githubAvatar" src="" alt="GitHub Avatar" class="github-avatar">
+          <div class="github-info">
+            <span class="github-name" id="githubName">-</span>
+            <span class="github-logout" id="githubLogout">로그아웃</span>
+          </div>
+        </div>
+
+        <!-- 저장소 선택 -->
+        <div class="repo-selector">
+          <select class="repo-select" id="repoSelect">
+            <option value="">저장소 선택...</option>
+          </select>
+          <button class="create-repo-btn" id="createRepoBtn" title="새 저장소 만들기">+</button>
+        </div>
+
+        <!-- 자동 제출 토글 -->
+        <div class="auto-submit-toggle">
+          <span class="toggle-label">GitHub 자동 제출</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="githubAutoSubmit" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- 구글 폼 설정 (최초 설정용 - 메인 UI) -->
+    <div class="section" id="mainFormSetup">
+      <div class="section-title">구글 폼 연결</div>
+      <input type="text" class="setting-input" id="mainGoogleFormUrl" placeholder="구글 폼 URL 붙여넣기" style="margin-bottom: 8px;">
+      <button class="setting-btn" id="mainSaveFormBtn">🔍 Entry ID 자동 추출</button>
+      <div class="setting-status" id="mainFormStatus" style="margin-top: 6px;"></div>
+    </div>
+
+    <!-- 다음 문제 추천 -->
+    <div id="nextProblemContainer">
+      <div class="next-problem" id="nextProblem">
+        <span class="next-badge">추천</span>
+        <div class="next-info">
+          <div class="next-title" id="nextTitle">로딩 중...</div>
+          <div class="next-meta">
+            <span id="nextDifficulty">⭐</span>
+            <span id="nextPlatform">-</span>
+          </div>
+        </div>
+        <span class="next-arrow">→</span>
+      </div>
+    </div>
+    <div id="completeContainer" class="hidden">
+      <div class="complete-card">
+        <div class="complete-icon">🎉</div>
+        <div class="complete-title">모든 문제 완료!</div>
+        <div class="complete-desc">184개 문제를 모두 해결했습니다</div>
+      </div>
+    </div>
+
+    <!-- 진행률 요약 -->
+    <div class="progress-summary">
+      <div class="progress-card">
+        <div class="progress-value" id="totalPercent">0%</div>
+        <div class="progress-label">전체</div>
+      </div>
+      <div class="progress-card">
+        <div class="progress-value" id="progCount">0</div>
+        <div class="progress-label">프로그래머스</div>
+      </div>
+      <div class="progress-card">
+        <div class="progress-value" id="leetCount">0</div>
+        <div class="progress-label">LeetCode</div>
+      </div>
+      <div class="progress-card">
+        <div class="progress-value" id="hackCount">0</div>
+        <div class="progress-label">HackerRank</div>
+      </div>
+    </div>
+
+    <!-- 플랫폼 탭 -->
+    <div class="tab-nav">
+      <button class="tab-btn active" data-tab="programmers">
+        <span>프로그래머스</span>
+        <span class="tab-count" id="progTabCount">0/76</span>
+      </button>
+      <button class="tab-btn" data-tab="leetcode">
+        <span>LeetCode</span>
+        <span class="tab-count" id="leetTabCount">0/50</span>
+      </button>
+      <button class="tab-btn" data-tab="hackerrank">
+        <span>HackerRank</span>
+        <span class="tab-count" id="hackTabCount">0/58</span>
+      </button>
+      <button class="tab-btn" data-tab="settings">
+        <span>설정</span>
+        <span class="tab-count">⚙️</span>
+      </button>
+    </div>
+
+    <!-- 프로그래머스 탭 -->
+    <div class="tab-content active" id="tab-programmers">
+      <div id="progDifficultyList"></div>
+    </div>
+
+    <!-- LeetCode 탭 -->
+    <div class="tab-content" id="tab-leetcode">
+      <div id="leetDifficultyList"></div>
+    </div>
+
+    <!-- HackerRank 탭 -->
+    <div class="tab-content" id="tab-hackerrank">
+      <div id="hackDifficultyList"></div>
+    </div>
+
+    <!-- 설정 탭 -->
+    <div class="tab-content" id="tab-settings">
+      <!-- 구글 폼 설정 -->
+      <div class="section">
+        <div class="section-title">구글 폼 연결</div>
+        <!-- 폼 설정 입력 -->
+        <div id="formSetup">
+          <input type="text" class="setting-input" id="googleFormUrl" placeholder="구글 폼 URL 붙여넣기" style="margin-bottom: 8px;">
+          <button class="setting-btn" id="saveFormBtn">🔍 Entry ID 자동 추출</button>
+          <div class="setting-status" id="formStatus" style="margin-top: 6px;"></div>
+        </div>
+        <!-- 폼 연결 완료 표시 -->
+        <div id="formDisplay" class="hidden">
+          <div class="form-connected">
+            <div class="form-connected-dot"></div>
+            <div class="form-connected-info">
+              <div class="form-connected-title">폼 연결됨</div>
+              <div class="form-connected-detail" id="formEntryInfo">-</div>
+            </div>
+            <button id="changeFormBtn" class="form-change-btn">변경</button>
+          </div>
+          <div id="entryDetails" class="entry-details"></div>
+        </div>
+      </div>
+
+      <!-- 초기화 -->
+      <div class="section">
+        <div class="section-title">진행 상황 초기화</div>
+        <p style="font-size: 11px; color: #64748b; margin-bottom: 10px;">모든 풀이 기록을 삭제합니다. 이 작업은 되돌릴 수 없습니다.</p>
+        <button class="setting-btn" id="resetBtn" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+          🗑️ 모든 진행 상황 초기화
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Made with ♥ by SeolMuah</div>
+
+  <!-- 토스트 메시지 컨테이너 -->
+  <div id="toast" class="toast"></div>
+
+  <script src="problems.js"></script>
+  <script src="oauth.js"></script>
+  <script src="github-api.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
