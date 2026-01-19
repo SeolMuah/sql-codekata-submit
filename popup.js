@@ -149,7 +149,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         showToast('GitHub 로그인 성공!');
-        resetLoginUI();
+        // 인터벌만 정리 (로그인 버튼은 이미 숨겨짐)
+        if (authWatchInterval) {
+          clearInterval(authWatchInterval);
+          authWatchInterval = null;
+        }
       }
     } catch (error) {
       console.error('[SPARTA] 인증 상태 업데이트 오류:', error);
@@ -232,7 +236,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
 
           showToast('GitHub 로그인 성공!');
-          resetLoginUI();
+          // 인터벌 이미 정리됨, 추가 작업 불필요
         }
       } catch (error) {
         // 에러 무시 (팝업이 닫히면 발생할 수 있음)
@@ -689,7 +693,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.head.appendChild(style);
   }
 
-  function showToast(message, type = 'success', duration = 3000) {
+  function showToast(message, type = 'success', duration = 2500) {
     // 기존 토스트가 있으면 fadeOut 후 제거
     const existing = document.querySelector('.toast');
     if (existing) {
@@ -706,11 +710,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (type === 'error') {
       bgColor = 'linear-gradient(135deg, #ef4444, #dc2626)';
       boxShadow = '0 4px 20px rgba(239, 68, 68, 0.4)';
-      duration = Math.max(duration, 4500); // 에러는 최소 4.5초
+      duration = Math.max(duration, 3500); // 에러는 최소 3.5초
     } else if (type === 'warning') {
       bgColor = 'linear-gradient(135deg, #f59e0b, #d97706)';
       boxShadow = '0 4px 20px rgba(245, 158, 11, 0.4)';
-      duration = Math.max(duration, 4000); // 경고는 최소 4초
+      duration = Math.max(duration, 3000); // 경고는 최소 3초
     }
 
     toast.style.cssText = `
