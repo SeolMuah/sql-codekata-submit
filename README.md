@@ -43,21 +43,76 @@ SPARTA SQL 코드카타 문제 풀이를 자동으로 구글 폼과 GitHub에 �
 
 4. GitHub 연동 시 코드가 자동으로 저장소에 업로드됩니다
 
-## 파일 구조
+## 제출 규칙
+
+| 문제 유형 | 구글 폼 | GitHub |
+|-----------|---------|--------|
+| **등록된 문제** | O 제출 | O 제출 |
+| **미등록 문제** | X 제출 안함 | O 제출 |
+
+- **등록된 문제**: `problems.js`에 정의된 코드카타 문제
+- **미등록 문제**: 등록되지 않은 문제 (연습용 등)
+
+## GitHub 저장소 구조
+
+GitHub 연동 시 아래와 같은 구조로 코드가 저장됩니다:
 
 ```
-sql_extension_/
-├── manifest.json          # 확장 프로그램 설정
-├── background.js          # 백그라운드 서비스
-├── popup.html/js          # 팝업 UI
-├── content.js             # Programmers 스크립트
-├── content-leetcode.js    # LeetCode 스크립트
-├── content-hackerrank.js  # HackerRank 스크립트
-├── problems.js            # 문제 데이터
-├── oauth.js               # GitHub OAuth
-├── github-api.js          # GitHub API
-└── icons/                 # 아이콘
+your-repository/
+├── programmers/
+│   ├── 1_입문/
+│   │   ├── 1_이름이있는동물의아이디.sql
+│   │   └── 2_조건에맞는회원수구하기.sql
+│   ├── 2_기초/
+│   │   └── 10_과일로만든아이스크림고르기.sql
+│   ├── 3_중급/
+│   ├── 4_고급/
+│   ├── 5_심화/
+│   └── other/                    ← 미등록 문제
+│       └── 99999.sql
+├── leetcode/
+│   ├── 2_기초/
+│   │   └── 77_Recyclable_and_Low_Fat.sql
+│   └── other/
+│       └── two-sum.sql
+└── hackerrank/
+    ├── 3_중급/
+    │   └── 148_Type_of_Triangle.sql
+    └── other/
+        └── unknown-slug.sql
 ```
+
+### 파일명 규칙
+
+- **등록된 문제**: `{문제번호}_{제목}.sql`
+- **미등록 문제**: `{문제ID}.sql` (URL slug 사용)
+
+### SQL 파일 헤더 형식
+
+자동으로 생성되는 파일 헤더:
+
+```sql
+-- 이름이 있는 동물의 아이디
+-- 프로그래머스 입문 (⭐)
+-- 문제 링크: https://school.programmers.co.kr/learn/courses/30/lessons/59403
+-- 작성자: 홍길동
+-- 작성일: 2026. 01. 19. 15:30:45
+
+SELECT ANIMAL_ID, NAME
+FROM ANIMAL_INS
+WHERE NAME IS NOT NULL;
+```
+
+### 난이도 폴더
+
+| 폴더명 | 난이도 |
+|--------|--------|
+| `1_입문` | ⭐ |
+| `2_기초` | ⭐⭐ |
+| `3_중급` | ⭐⭐⭐ |
+| `4_고급` | ⭐⭐⭐⭐ |
+| `5_심화` | ⭐⭐⭐⭐⭐ |
+| `other` | 미등록 문제 |
 
 ## 문의
 
