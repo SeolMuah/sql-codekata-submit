@@ -632,11 +632,11 @@
     /* 저장소 선택 */
     .repo-selector {
       display: flex;
-      gap: 8px;
+      flex-direction: column;
       margin-bottom: 10px;
     }
     .repo-select {
-      flex: 1;
+      width: 100%;
       padding: 10px 12px;
       background: rgba(0,0,0,0.4);
       border: 1px solid rgba(139, 92, 246, 0.2);
@@ -650,38 +650,49 @@
       border-color: #8b5cf6;
     }
     .create-repo-btn {
-      padding: 10px 14px;
-      background: linear-gradient(135deg, #7c3aed, #8b5cf6);
-      border: none;
+      width: 100%;
+      padding: 10px;
+      background: transparent;
+      border: 1px dashed rgba(139, 92, 246, 0.3);
       border-radius: 8px;
-      color: white;
-      font-weight: 700;
-      font-size: 14px;
+      color: #a78bfa;
+      font-size: 12px;
       cursor: pointer;
+      margin-top: 8px;
       transition: all 0.2s;
     }
     .create-repo-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+      background: rgba(139, 92, 246, 0.1);
+      border-color: rgba(139, 92, 246, 0.5);
     }
     .create-repo-btn:disabled {
       opacity: 0.6;
       cursor: not-allowed;
-      transform: none;
     }
 
-    /* 자동 제출 토글 */
-    .auto-submit-toggle {
+    /* 자동 제출 토글 (설정 탭용) */
+    .toggle-option {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 10px 12px;
+      justify-content: space-between;
+      padding: 12px;
       background: rgba(0,0,0,0.2);
       border-radius: 8px;
+      margin-bottom: 8px;
     }
     .toggle-label {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .toggle-title {
       font-size: 12px;
-      color: #94a3b8;
+      font-weight: 500;
+      color: #e2e8f0;
+    }
+    .toggle-desc {
+      font-size: 10px;
+      color: #64748b;
     }
     .toggle-switch {
       position: relative;
@@ -822,16 +833,7 @@
           <select class="repo-select" id="repoSelect">
             <option value="">저장소 선택...</option>
           </select>
-          <button class="create-repo-btn" id="createRepoBtn" title="새 저장소 만들기">+</button>
-        </div>
-
-        <!-- 자동 제출 토글 -->
-        <div class="auto-submit-toggle">
-          <span class="toggle-label">GitHub 자동 제출</span>
-          <label class="toggle-switch">
-            <input type="checkbox" id="githubAutoSubmit" checked>
-            <span class="toggle-slider"></span>
-          </label>
+          <button class="create-repo-btn" id="createRepoBtn">+ 새 저장소 만들기 (sql-codekata)</button>
         </div>
       </div>
     </div>
@@ -943,6 +945,21 @@
             <button id="changeFormBtn" class="form-change-btn">변경</button>
           </div>
           <div id="entryDetails" class="entry-details"></div>
+        </div>
+      </div>
+
+      <!-- 기능 설정 -->
+      <div class="section">
+        <div class="section-title">기능 설정</div>
+        <div class="toggle-option">
+          <div class="toggle-label">
+            <span class="toggle-title">GitHub 자동 제출</span>
+            <span class="toggle-desc">정답 제출 시 자동으로 GitHub에 커밋</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="githubAutoSubmit" checked>
+            <span class="toggle-slider"></span>
+          </label>
         </div>
       </div>
 

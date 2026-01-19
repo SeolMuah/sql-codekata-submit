@@ -67,6 +67,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 현재 추천 문제
   let currentNextProblem = null;
 
+  // 인증 상태 감시 인터벌 (최상단에 선언해야 temporal dead zone 회피)
+  let authWatchInterval = null;
+
   // 저장된 데이터 로드
   const stored = await chrome.storage.sync.get(['studentName', 'solvedProblems', 'googleFormUrl', 'formEntries']);
   const studentName = stored.studentName || '';
@@ -127,6 +130,144 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // GitHub 초기화
   initGitHub();
+
+  // ========== 인증 상태 자동 업데이트 리스너 ==========
+
+  // 인증 상태 확인 및 UI 업데이트 함수 (재사용)
+  async function checkAndUpdateAuthState() {
+    try {
+      const authResult = await chrome.runtime.sendMessage({ type: 'CHECK_AUTH' });
+      console.log('[SPARTA] 인증 상태 업데이트:', authResult);
+
+      if (authResult.success && authResult.authenticated && authResult.user) {
+        showGitHubLoggedIn(authResult.user);
+        await loadUserReposFromBackground();
+
+        if (authResult.repo) {
+          repoSelect.value = authResult.repo;
+        }
+
+        showToast('GitHub 로그인 성공!');
+        resetLoginUI();
+      }
+    } catch (error) {
+      console.error('[SPARTA] 인증 상태 업데이트 오류:', error);
+    }
+  }
+
+  // 백그라운드에서 저장소 목록 로드
+  async function loadUserReposFromBackground() {
+    try {
+      const result = await chrome.runtime.sendMessage({ type: 'GET_USER_REPOS' });
+      if (result.success) {
+        repoSelect.innerHTML = '<option value="">저장소 선택...</option>';
+        result.repos.forEach(repo => {
+          const option = document.createElement('option');
+          option.value = repo.full_name;
+          option.textContent = repo.name + (repo.private ? ' 🔒' : '');
+          repoSelect.appendChild(option);
+        });
+
+        // 이전에 선택한 저장소 복원
+        const { githubRepo } = await chrome.storage.sync.get(['githubRepo']);
+        if (githubRepo) {
+          repoSelect.value = githubRepo;
+        }
+      }
+    } catch (error) {
+      console.error('[SPARTA] 저장소 목록 로드 오류:', error);
+    }
+  }
+
+  // Storage 변경 감지 리스너 - 토큰 변경 시 즉시 UI 업데이트
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'local') {
+      // 토큰이 추가됨 (로그인 성공)
+      if (changes.githubToken?.newValue && !changes.githubToken?.oldValue) {
+        console.log('[SPARTA] 토큰 감지됨 - UI 업데이트');
+        checkAndUpdateAuthState();
+      }
+      // 토큰이 삭제됨 (로그아웃)
+      if (!changes.githubToken?.newValue && changes.githubToken?.oldValue) {
+        console.log('[SPARTA] 토큰 삭제됨 - 로그아웃 상태로 전환');
+        showGitHubLoggedOut();
+      }
+    }
+  });
+
+  // Background에서 브로드캐스트 수신 - 즉시 UI 업데이트
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.type === 'AUTH_SUCCESS') {
+      console.log('[SPARTA] AUTH_SUCCESS 브로드캐스트 수신');
+      checkAndUpdateAuthState();
+    }
+  });
+
+  // 인증 상태 변화 감시 (백그라운드 폴링 결과 확인)
+  function watchAuthStatusChanges() {
+    // 기존 인터벌 정리
+    if (authWatchInterval) {
+      clearInterval(authWatchInterval);
+    }
+
+    console.log('[SPARTA] 인증 상태 감시 시작');
+
+    authWatchInterval = setInterval(async () => {
+      try {
+        const authResult = await chrome.runtime.sendMessage({ type: 'CHECK_AUTH' });
+
+        if (authResult.success && authResult.authenticated) {
+          // 로그인 성공!
+          console.log('[SPARTA] 인증 성공 감지!');
+          clearInterval(authWatchInterval);
+          authWatchInterval = null;
+
+          // UI 상태 업데이트
+          showGitHubLoggedIn(authResult.user);
+          await loadUserReposFromBackground();
+
+          if (authResult.repo) {
+            repoSelect.value = authResult.repo;
+          }
+
+          showToast('GitHub 로그인 성공!');
+          resetLoginUI();
+        }
+      } catch (error) {
+        // 에러 무시 (팝업이 닫히면 발생할 수 있음)
+        console.log('[SPARTA] 인증 상태 확인 중 오류 (무시됨):', error.message);
+      }
+    }, 1000); // 1초마다 확인
+
+    // 15분 후 자동 중단 (토큰 만료 시간)
+    setTimeout(() => {
+      if (authWatchInterval) {
+        console.log('[SPARTA] 인증 감시 타임아웃 (15분)');
+        clearInterval(authWatchInterval);
+        authWatchInterval = null;
+        resetLoginUI();
+      }
+    }, 15 * 60 * 1000);
+  }
+
+  // 로그인 UI 리셋
+  function resetLoginUI() {
+    // 인증 감시 인터벌 정리
+    if (authWatchInterval) {
+      clearInterval(authWatchInterval);
+      authWatchInterval = null;
+    }
+
+    loginWithGithub.disabled = false;
+    loginWithGithub.innerHTML = `
+      <svg viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+      </svg>
+      GitHub로 로그인
+    `;
+    githubLoginSection.classList.remove('hidden');
+    deviceCodeSection.classList.add('hidden');
+  }
 
   // ========== 이벤트 리스너 ==========
 
@@ -651,34 +792,30 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ========== GitHub 관련 함수 ==========
 
-  // GitHub 상태 로드 및 초기화
+  // GitHub 상태 로드 및 초기화 (백그라운드 CHECK_AUTH 사용)
   async function initGitHub() {
     try {
-      const tokenData = await chrome.storage.local.get(['githubToken', 'githubUser']);
-      const settings = await chrome.storage.sync.get(['githubRepo', 'githubAutoSubmit']);
+      // 인증 상태 확인 (강화된 검증)
+      const authResult = await chrome.runtime.sendMessage({ type: 'CHECK_AUTH' });
+      console.log('[SPARTA] 초기 인증 상태:', authResult);
 
-      if (tokenData.githubToken && tokenData.githubUser) {
-        // 토큰 유효성 검사
-        const isValid = await validateToken(tokenData.githubToken);
-        if (isValid) {
-          showGitHubLoggedIn(tokenData.githubUser);
-          await loadRepos(tokenData.githubToken);
+      // user 객체까지 확인하여 완전한 로그인 상태 검증
+      if (authResult.success && authResult.authenticated && authResult.user) {
+        // 로그인됨
+        showGitHubLoggedIn(authResult.user);
+        await loadUserReposFromBackground();
 
-          if (settings.githubRepo) {
-            repoSelect.value = settings.githubRepo;
-          }
-
-          githubAutoSubmit.checked = settings.githubAutoSubmit !== false;
-        } else {
-          // 토큰이 만료되었으므로 로그아웃 처리
-          console.log('[SPARTA] GitHub 토큰 만료 감지, 재로그인 필요');
-          await logout();
-          showGitHubLoggedOut();
-          showGitHubTokenExpiredMessage();
+        if (authResult.repo) {
+          repoSelect.value = authResult.repo;
         }
       } else {
+        // 로그인 안됨
         showGitHubLoggedOut();
       }
+
+      // 자동 제출 설정 로드 (로그인 상태와 무관하게 항상 로드)
+      const settings = await chrome.storage.sync.get(['githubAutoSubmit']);
+      githubAutoSubmit.checked = settings.githubAutoSubmit !== false;
     } catch (error) {
       console.error('[SPARTA] GitHub 초기화 오류:', error);
       showGitHubLoggedOut();
@@ -755,7 +892,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // GitHub 로그인 이벤트
+  // GitHub 로그인 이벤트 (백그라운드 자동화 버전)
   loginWithGithub.addEventListener('click', async () => {
     // 네트워크 상태 확인
     if (!navigator.onLine) {
@@ -777,59 +914,72 @@ document.addEventListener('DOMContentLoaded', async () => {
         연결 중...
       `;
 
-      // Device Code 요청
-      const deviceData = await requestDeviceCode();
-      showDeviceCode(deviceData.user_code);
+      // Step 1: Device Flow 시작 (백그라운드에 요청)
+      const deviceResult = await chrome.runtime.sendMessage({ type: 'START_DEVICE_FLOW' });
+      console.log('[SPARTA] Device Flow 결과:', deviceResult);
+
+      if (!deviceResult.success) {
+        throw new Error(deviceResult.message || 'Device Flow 시작 실패');
+      }
+
+      // Device Code 표시
+      showDeviceCode(deviceResult.user_code);
 
       // 자동으로 코드 클립보드에 복사
-      await copyToClipboard(deviceData.user_code);
+      await copyToClipboard(deviceResult.user_code);
 
       // 자동으로 GitHub 인증 페이지 새 탭에서 열기
-      chrome.tabs.create({ url: deviceData.verification_uri });
+      chrome.tabs.create({ url: deviceResult.verification_uri });
 
-      // 토큰 폴링 시작
-      const tokenResult = await pollForToken(
-        deviceData.device_code,
-        deviceData.interval,
-        deviceData.expires_in
-      );
+      // Step 2: 백그라운드에 폴링 시작 요청 (await 하지 않음!)
+      // 팝업이 닫혀도 백그라운드에서 계속 폴링 진행
+      chrome.runtime.sendMessage({
+        type: 'START_POLLING_BACKGROUND',
+        data: {
+          device_code: deviceResult.device_code,
+          interval: deviceResult.interval,
+          expires_in: deviceResult.expires_in
+        }
+      }).catch(() => {
+        // 팝업이 닫혀있어도 무시 - 백그라운드는 계속 진행
+        console.log('[SPARTA] 백그라운드에서 폴링 계속 진행');
+      });
 
-      if (tokenResult.success) {
-        // 사용자 정보 가져오기
-        const user = await getUserInfo(tokenResult.access_token);
+      // Step 3: 인증 상태 변화 감시 시작
+      watchAuthStatusChanges();
 
-        // 저장
-        await chrome.storage.local.set({
-          githubToken: tokenResult.access_token,
-          githubUser: user
-        });
-
-        showGitHubLoggedIn(user);
-        await loadRepos(tokenResult.access_token);
-        showToast('GitHub 연결 완료!');
-      }
     } catch (error) {
       console.error('[SPARTA] GitHub 로그인 오류:', error);
       showToast(error.message || 'GitHub 연결 실패', 'error');
-      showGitHubLoggedOut();
-    } finally {
-      loginWithGithub.disabled = false;
-      loginWithGithub.innerHTML = `
-        <svg viewBox="0 0 16 16" fill="currentColor">
-          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
-        </svg>
-        GitHub로 로그인
-      `;
+      resetLoginUI();
     }
   });
 
-  // 로그아웃
+  // 로그아웃 (완전한 상태 초기화)
   githubLogout.addEventListener('click', async () => {
     if (confirm('GitHub 연결을 해제하시겠습니까?')) {
-      await logout();
-      showGitHubLoggedOut();
-      repoSelect.innerHTML = '<option value="">저장소 선택...</option>';
-      showToast('로그아웃 완료');
+      try {
+        // 진행 중인 인증 폴링 중지
+        if (authWatchInterval) {
+          clearInterval(authWatchInterval);
+          authWatchInterval = null;
+        }
+
+        const result = await chrome.runtime.sendMessage({ type: 'LOGOUT' });
+
+        if (result.success) {
+          // UI 상태 완전 초기화
+          showGitHubLoggedOut();
+          resetLoginUI();
+          repoSelect.innerHTML = '<option value="">저장소 선택...</option>';
+          showToast('로그아웃되었습니다');
+        } else {
+          showToast('로그아웃 실패: ' + (result.message || '알 수 없는 오류'), 'error');
+        }
+      } catch (error) {
+        console.error('[SPARTA] 로그아웃 오류:', error);
+        showToast('로그아웃 실패: ' + error.message, 'error');
+      }
     }
   });
 
@@ -841,13 +991,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // 새 저장소 생성
+  // 새 저장소 생성 (고정 이름: sql-codekata)
   createRepoBtn.addEventListener('click', async () => {
-    const repoName = prompt('저장소 이름을 입력하세요:', 'sql-codekata');
-    if (!repoName) return;
+    const repoName = 'sql-codekata';
 
     try {
       createRepoBtn.disabled = true;
+      createRepoBtn.textContent = '생성 중...';
       const tokenData = await chrome.storage.local.get(['githubToken']);
 
       const result = await chrome.runtime.sendMessage({
@@ -856,10 +1006,32 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
       if (result.success) {
-        await loadRepos(tokenData.githubToken);
-        repoSelect.value = result.repo.full_name;
-        await chrome.storage.sync.set({ githubRepo: result.repo.full_name });
-        showToast(`저장소 '${repoName}' 생성 완료!`);
+        showToast('저장소가 생성되었습니다!');
+
+        const fullName = result.repo.full_name;
+
+        // Optimistic UI Update: 새 저장소를 드롭다운에 즉시 추가
+        const existsInSelect = Array.from(repoSelect.options).some(opt => opt.value === fullName);
+        if (!existsInSelect) {
+          const option = document.createElement('option');
+          option.value = fullName;
+          option.textContent = repoName;
+          if (repoSelect.options.length > 1) {
+            repoSelect.insertBefore(option, repoSelect.options[1]);
+          } else {
+            repoSelect.appendChild(option);
+          }
+        }
+
+        // 새 저장소 선택
+        repoSelect.value = fullName;
+        await chrome.storage.sync.set({ githubRepo: fullName });
+
+        // 백그라운드에서 API 목록 새로고침 (동기화 목적)
+        setTimeout(async () => {
+          await loadRepos(tokenData.githubToken);
+          repoSelect.value = fullName;
+        }, 2000);
       } else {
         showToast(result.error || '저장소 생성 실패', 'error');
       }
@@ -867,6 +1039,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       showToast(error.message || '저장소 생성 실패', 'error');
     } finally {
       createRepoBtn.disabled = false;
+      createRepoBtn.textContent = '+ 새 저장소 만들기 (sql-codekata)';
     }
   });
 
