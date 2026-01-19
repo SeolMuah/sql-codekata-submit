@@ -512,6 +512,22 @@
     /* 숨김 */
     .hidden { display: none !important; }
 
+    /* 복사 버튼 */
+    .copy-btn {
+      padding: 8px 12px;
+      background: rgba(139, 92, 246, 0.2);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 6px;
+      color: #a78bfa;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+    .copy-btn:hover {
+      background: rgba(139, 92, 246, 0.3);
+      border-color: rgba(139, 92, 246, 0.5);
+    }
+
     /* GitHub 버튼 */
     .github-login-btn {
       width: 100%;
@@ -772,7 +788,11 @@
       <!-- Device Code 표시 섹션 -->
       <div id="deviceCodeSection" class="device-code-section hidden">
         <p style="font-size: 11px; color: #94a3b8; margin-bottom: 8px;">아래 코드를 GitHub에 입력하세요</p>
-        <div class="device-code" id="userCode">XXXX-XXXX</div>
+        <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+          <div class="device-code" id="userCode">XXXX-XXXX</div>
+          <button id="copyCodeBtn" class="copy-btn" title="코드 복사">📋</button>
+        </div>
+        <p id="codeCopiedMsg" class="hidden" style="font-size: 10px; color: #10b981; margin-top: 4px;">✓ 복사되었습니다!</p>
         <a href="https://github.com/login/device" target="_blank" class="device-code-link">
           GitHub에서 인증하기 →
         </a>

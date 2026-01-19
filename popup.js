@@ -565,6 +565,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     setTimeout(() => toast.remove(), 2000);
   }
 
+  // 클립보드 복사 함수
+  async function copyToClipboard(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      const codeCopiedMsg = document.getElementById('codeCopiedMsg');
+      if (codeCopiedMsg) {
+        codeCopiedMsg.classList.remove('hidden');
+        setTimeout(() => codeCopiedMsg.classList.add('hidden'), 2000);
+      }
+      console.log('[SPARTA] 코드 클립보드 복사 완료:', text);
+    } catch (err) {
+      console.error('[SPARTA] 클립보드 복사 실패:', err);
+    }
+  }
+
   function extractEntryIds(html) {
     const entries = {};
     const fbStartIndex = html.indexOf('FB_PUBLIC_LOAD_DATA_');
@@ -766,6 +781,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       const deviceData = await requestDeviceCode();
       showDeviceCode(deviceData.user_code);
 
+      // 자동으로 코드 클립보드에 복사
+      await copyToClipboard(deviceData.user_code);
+
+      // 자동으로 GitHub 인증 페이지 새 탭에서 열기
+      chrome.tabs.create({ url: deviceData.verification_uri });
+
       // 토큰 폴링 시작
       const tokenResult = await pollForToken(
         deviceData.device_code,
@@ -854,4 +875,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     await chrome.storage.sync.set({ githubAutoSubmit: githubAutoSubmit.checked });
     showToast(githubAutoSubmit.checked ? 'GitHub 자동 제출 활성화' : 'GitHub 자동 제출 비활성화');
   });
+
+  // 복사 버튼 이벤트 리스너
+  const copyCodeBtn = document.getElementById('copyCodeBtn');
+  if (copyCodeBtn) {
+    copyCodeBtn.addEventListener('click', async () => {
+      const code = userCodeDisplay.textContent;
+      if (code && code !== 'XXXX-XXXX') {
+        await copyToClipboard(code);
+      }
+    });
+  }
 });
